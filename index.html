@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RequestFlow — Employee Request Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#14181F; --ink-2:#3A424E; --muted:#7A8494;
+    --surface:#FFFFFF; --bg:#F5F7F9; --line:#E4E7EC; --line-2:#EEF1F4;
+    --accent:#0E9AA7; --accent-ink:#0A6B74; --accent-wash:#E4F4F5;
+    --open:#3B6FE0; --open-wash:#E7EDFC;
+    --active:#E08A0B; --active-wash:#FBF0DC;
+    --final:#12986B; --final-wash:#E0F4EC;
+    --risk:#D97706; --breach:#DC2626; --breach-wash:#FCE7E7;
+    --shadow:0 1px 2px rgba(20,24,31,.04),0 4px 16px rgba(20,24,31,.06);
+    --shadow-lg:0 8px 40px rgba(20,24,31,.14);
+    --r:12px; --r-sm:8px;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;font-size:14px;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  input,select,textarea{font-family:inherit;font-size:14px}
+  ::selection{background:var(--accent-wash)}
+
+  /* ---- Top bar ---- */
+  .topbar{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  .topbar-in{max-width:1180px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;gap:28px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:-.01em;font-size:15px}
+  .brand-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-ink));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;box-shadow:var(--shadow)}
+  .brand small{display:block;font-weight:500;font-size:10.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-top:-2px}
+  .tabs{display:flex;gap:2px;margin-left:8px}
+  .tab{padding:7px 14px;border-radius:8px;font-weight:500;color:var(--ink-2);font-size:13.5px;position:relative;transition:.15s}
+  .tab:hover{background:var(--line-2)}
+  .tab.active{background:var(--ink);color:#fff}
+  .tab .cnt{margin-left:6px;font-family:var(--mono);font-size:11px;opacity:.7}
+  .topbar-spacer{flex:1}
+  .btn-ghost{padding:7px 12px;border-radius:8px;border:1px solid var(--line);color:var(--ink-2);font-weight:500;font-size:12.5px;transition:.15s;background:#fff}
+  .btn-ghost:hover{border-color:var(--muted);color:var(--ink)}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 80px}
+  .page-head{margin-bottom:22px}
+  .page-head h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+  .page-head p{color:var(--muted);margin-top:3px;font-size:13.5px;max-width:60ch}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);font-weight:600;margin-bottom:8px}
+
+  /* ---- Submit layout ---- */
+  .submit-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:start}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+  .card-pad{padding:22px}
+  .field{margin-bottom:15px}
+  .field label{display:block;font-weight:600;font-size:12.5px;margin-bottom:6px;color:var(--ink-2)}
+  .field .hint{font-weight:400;color:var(--muted);font-size:11.5px}
+  .control{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;color:var(--ink);transition:.15s}
+  .control:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+  textarea.control{resize:vertical;min-height:96px;line-height:1.55}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .channel-pills{display:flex;flex-wrap:wrap;gap:7px}
+  .pill{padding:7px 12px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;font-weight:500;color:var(--ink-2);transition:.12s;background:#fff}
+  .pill:hover{border-color:var(--muted)}
+  .pill.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pill .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;vertical-align:middle;background:var(--accent)}
+  .pill.on .dot{background:#fff}
+  .btn-primary{width:100%;padding:12px;border-radius:var(--r-sm);background:var(--accent);color:#fff;font-weight:600;font-size:14px;transition:.15s;box-shadow:0 1px 2px rgba(14,154,167,.3)}
+  .btn-primary:hover{background:var(--accent-ink)}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ---- Classification preview (signature element) ---- */
+  .triage{background:linear-gradient(180deg,#0F1620,#14181F);border-radius:var(--r);color:#fff;overflow:hidden;position:sticky;top:80px}
+  .triage-head{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+  .triage-head .t{font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(14,154,167,.6);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(14,154,167,.5)}70%{box-shadow:0 0 0 7px rgba(14,154,167,0)}100%{box-shadow:0 0 0 0 rgba(14,154,167,0)}}
+  .triage-head .auto{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.04em}
+  .triage-body{padding:18px 20px}
+  .triage-empty{color:#8A93A3;font-size:13px;text-align:center;padding:24px 8px;line-height:1.6}
+  .verdict{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .vbox{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px}
+  .vbox .k{font-size:10.5px;color:#8A93A3;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:5px}
+  .vbox .v{font-weight:600;font-size:15px;display:flex;align-items:center;gap:7px}
+  .vbox .v .mono{font-family:var(--mono);font-size:13px}
+  .trace{font-size:12px}
+  .trace-title{color:#8A93A3;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:8px}
+  .kw{display:inline-block;font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:6px;background:var(--accent-wash);color:var(--accent-ink);margin:0 5px 5px 0;font-weight:500}
+  .trace-line{color:#B8C0CC;line-height:1.6;font-size:12px}
+  .route-to{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px;font-size:12.5px;color:#B8C0CC}
+  .route-to b{color:#fff;font-weight:600}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .badge .bd{width:6px;height:6px;border-radius:50%}
+  .b-cat{background:var(--accent-wash);color:var(--accent-ink)}
+  .b-Open{background:var(--open-wash);color:var(--open)} .b-Open .bd{background:var(--open)}
+  .b-Active{background:var(--active-wash);color:var(--active)} .b-Active .bd{background:var(--active)}
+  .b-Finalized{background:var(--final-wash);color:var(--final)} .b-Finalized .bd{background:var(--final)}
+  .prio{font-family:var(--mono);font-weight:600}
+  .prio-Urgent{color:var(--breach)} .prio-High{color:var(--risk)} .prio-Medium{color:var(--ink-2)} .prio-Low{color:var(--muted)}
+
+  /* ---- Queue / Kanban ---- */
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .search{flex:1;min-width:200px;position:relative}
+  .search .control{padding-left:34px}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .col{background:transparent}
+  .col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px}
+  .col-head .l{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+  .col-head .c{font-family:var(--mono);font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+  .col-body{display:flex;flex-direction:column;gap:10px;min-height:60px}
+  .tk{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px 14px;cursor:pointer;transition:.14s;box-shadow:var(--shadow)}
+  .tk:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+  .tk-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+  .tk-id{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent-ink)}
+  .tk-title{font-weight:600;font-size:13.5px;line-height:1.35;margin-bottom:8px}
+  .tk-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tk-sla{font-family:var(--mono);font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+  .sla-ontrack{color:var(--final)} .sla-risk{color:var(--risk)} .sla-breach{color:var(--breach)} .sla-met{color:var(--muted)}
+  .col-empty{border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted);font-size:12.5px}
+
+  /* ---- Drawer ---- */
+  .scrim{position:fixed;inset:0;background:rgba(20,24,31,.4);backdrop-filter:blur(2px);z-index:60;opacity:0;pointer-events:none;transition:.2s}
+  .scrim.show{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(480px,100%);background:var(--bg);z-index:70;transform:translateX(100%);transition:.28s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-lg);display:flex;flex-direction:column}
+  .drawer.show{transform:translateX(0)}
+  .dr-head{padding:20px 22px;background:#fff;border-bottom:1px solid var(--line)}
+  .dr-close{position:absolute;top:16px;right:18px;width:30px;height:30px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .dr-close:hover{background:var(--line-2);color:var(--ink)}
+  .dr-id{font-family:var(--mono);font-size:12px;color:var(--accent-ink);font-weight:500;margin-bottom:6px}
+  .dr-title{font-size:17px;font-weight:700;letter-spacing:-.01em;padding-right:30px;line-height:1.35}
+  .dr-body{flex:1;overflow-y:auto;padding:20px 22px}
+  .dr-sec{margin-bottom:22px}
+  .dr-sec h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:10px}
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;font-size:13px}
+  .kv .k{color:var(--muted)}
+  .kv .v{font-weight:500}
+  .desc-box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px;font-size:13px;line-height:1.6;color:var(--ink-2)}
+  .log{position:relative;padding-left:20px}
+  .log::before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--line)}
+  .log-item{position:relative;margin-bottom:14px;font-size:12.5px}
+  .log-item::before{content:"";position:absolute;left:-19px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+  .log-item .lt{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:1px}
+  .dr-foot{padding:16px 22px;background:#fff;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap}
+  .act{flex:1;min-width:120px;padding:11px;border-radius:8px;font-weight:600;font-size:13px;transition:.15s;text-align:center;border:1px solid transparent}
+  .act-primary{background:var(--accent);color:#fff}.act-primary:hover{background:var(--accent-ink)}
+  .act-final{background:var(--final);color:#fff}.act-final:hover{filter:brightness(.94)}
+  .act-ghost{background:#fff;border-color:var(--line);color:var(--ink-2)}.act-ghost:hover{border-color:var(--muted)}
+  .esc-flag{margin-top:12px;background:var(--breach-wash);border:1px solid #F5C6C6;border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--breach);display:flex;gap:8px;align-items:flex-start}
+
+  /* ---- Dashboard ---- */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow)}
+  .kpi .n{font-size:28px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:2px;font-weight:500}
+  .kpi.warn .n{color:var(--breach)}
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
+  .chart-row{display:flex;align-items:center;gap:12px;margin-bottom:11px;font-size:12.5px}
+  .chart-row .lab{width:96px;color:var(--ink-2);font-weight:500;flex-shrink:0}
+  .bar-track{flex:1;height:9px;background:var(--line-2);border-radius:6px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .chart-row .val{width:26px;text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;padding:9px 12px;border-bottom:1px solid var(--line)}
+  td{padding:11px 12px;border-bottom:1px solid var(--line-2)}
+  tbody tr{cursor:pointer;transition:.1s}
+  tbody tr:hover{background:var(--bg)}
+  td .tk-id{font-size:12px}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:90;opacity:0;transition:.25s;display:flex;align-items:center;gap:9px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .ti{color:var(--accent)}
+
+  @media(max-width:900px){
+    .submit-grid,.dash-grid{grid-template-columns:1fr}
+    .kanban{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr}
+    .triage{position:static}
+    .tabs .lbl{display:none}
+    .brand small{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-in">
+      <div class="brand">
+        <div class="brand-mark">R</div>
+        <div>RequestFlow<small>Employee Request Mgmt</small></div>
+      </div>
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="submit"><span class="lbl">Submit</span></button>
+        <button class="tab" data-tab="queue"><span class="lbl">Queue</span><span class="cnt" id="tabQueueCnt"></span></button>
+        <button class="tab" data-tab="dash"><span class="lbl">Dashboard</span></button>
+      </div>
+      <div class="topbar-spacer"></div>
+      <button class="btn-ghost" id="seedBtn">Load sample data</button>
+      <button class="btn-ghost" id="resetBtn">Reset</button>
+    </div>
+  </div>
+
+  <div class="wrap" id="view"></div>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="drawer" id="drawer"></div>
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   RequestFlow — Employee Request Management System (PoC)
+   Single-file, zero-dependency. Data persists in localStorage.
+   Built for the Physique 57 Automation Analyst assessment.
+   ============================================================ */
+
+const STORE = 'requestflow_v1';
+
+/* ---- Business rules: automated categorization ---- */
+const CATEGORY_RULES = {
+  HR:         ['leave','pto','vacation','sick','holiday','onboarding','offboarding','policy','benefit','insurance','appraisal','promotion','resignation','harassment','grievance','referral','offer letter','experience letter','id card','probation','notice period','attendance'],
+  IT:         ['laptop','computer','password','login','log in','vpn','wifi','wi-fi','software','install','outlook','email not','system','server','network','printer','application','app crash','bug','error','hardware','access denied','account locked','2fa','microsoft','google workspace'],
+  Payroll:    ['salary','payslip','pay slip','payroll','reimburse','reimbursement','tax','tds','bonus','incentive','deduction','bank account','ctc','pf','provident fund','arrears','overtime','expense claim'],
+  Operations: ['facility','facilities','supplies','stationery','seating','desk','cleaning','maintenance','pantry','access card','parking','courier','vendor','housekeeping','ac not','air conditioning','washroom','pest','security guard']
+};
+const PRIORITY_RULES = {
+  Urgent: ['urgent','asap','immediately','critical','blocked','cannot access','can\'t access','cant access','down','not working','breach','emergency','deadline today','locked out','no access'],
+  High:   ['today','soon','important','high priority','escalate','pending long','waiting for days'],
+  Low:    ['whenever','no rush','low priority','sometime','not urgent','fyi']
+};
+const SLA_HOURS = { Urgent:4, High:8, Medium:24, Low:72 };
+const DEPT = { HR:'People Team', IT:'IT Helpdesk', Payroll:'Finance & Payroll', Operations:'Facilities & Ops', Other:'Triage Desk' };
+const PREFIX = { HR:'HR', IT:'IT', Payroll:'PY', Operations:'OP', Other:'GN' };
+const CHANNELS = ['Portal','Email','WhatsApp','SMS','Instagram'];
+
+/* ---- Classifier ---- */
+function classify(text){
+  const t = (' '+text+' ').toLowerCase();
+  let best = 'Other', bestScore = 0, matched = [];
+  for(const cat in CATEGORY_RULES){
+    const hits = CATEGORY_RULES[cat].filter(kw => t.includes(kw));
+    if(hits.length > bestScore){ bestScore = hits.length; best = cat; matched = hits; }
+  }
+  const confidence = bestScore === 0 ? 0 : Math.min(0.55 + bestScore*0.15, 0.98);
+  return { category: best, matched, confidence };
+}
+function detectPriority(text){
+  const t = (' '+text+' ').toLowerCase();
+  for(const p of ['Urgent','High','Low']){
+    const hit = PRIORITY_RULES[p].find(kw => t.includes(kw));
+    if(hit) return { priority:p, kw:hit };
+  }
+  return { priority:'Medium', kw:null };
+}
+
+/* ---- State ---- */
+let state = load();
+function load(){
+  try{ const raw = localStorage.getItem(STORE); if(raw) return JSON.parse(raw); }catch(e){}
+  return { tickets:[], counter:0, seeded:false };
+}
+function save(){ try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){} }
+
+let ui = { tab:'submit', filter:{status:'all',category:'all',q:''}, selected:null, draft:{name:'',email:'',channel:'Portal',subject:'',desc:''} };
+
+/* ---- Ticket lifecycle ---- */
+function makeTicket(d){
+  const cls = classify(d.subject+' '+d.desc);
+  const pr = detectPriority(d.subject+' '+d.desc);
+  state.counter++;
+  const now = Date.now();
+  const dueAt = now + SLA_HOURS[pr.priority]*3600*1000;
+  const id = `${PREFIX[cls.category]}-2026-${String(state.counter).padStart(4,'0')}`;
+  return {
+    id, name:d.name||'Anonymous', email:d.email||'—', channel:d.channel,
+    subject:d.subject, desc:d.desc,
+    category:cls.category, matched:cls.matched, confidence:cls.confidence,
+    priority:pr.priority, priorityKw:pr.kw,
+    dept:DEPT[cls.category], status:'Open',
+    createdAt:now, updatedAt:now, dueAt, finalizedAt:null, escalated:false,
+    log:[{ ts:now, text:`Request received via ${d.channel}. Auto-classified as ${cls.category} · ${pr.priority} priority. Routed to ${DEPT[cls.category]}. SLA target: ${SLA_HOURS[pr.priority]}h.` }]
+  };
+}
+function slaState(tk){
+  if(tk.status==='Finalized') return tk.finalizedAt<=tk.dueAt ? 'met' : 'breach';
+  const now=Date.now(), total=tk.dueAt-tk.createdAt, left=tk.dueAt-now;
+  if(left<0) return 'breach';
+  if(left < total*0.25) return 'risk';
+  return 'ontrack';
+}
+function slaLabel(tk){
+  const s=slaState(tk), left=tk.dueAt-Date.now();
+  if(s==='met') return 'SLA met';
+  if(s==='breach') return tk.status==='Finalized'?'SLA missed':`Overdue ${fmtDur(-left)}`;
+  return `Due in ${fmtDur(left)}`;
+}
+function fmtDur(ms){
+  const m=Math.round(ms/60000);
+  if(m<60) return m+'m';
+  const h=Math.floor(m/60); if(h<24) return h+'h '+(m%60)+'m';
+  return Math.floor(h/24)+'d '+(h%24)+'h';
+}
+function fmtTime(ts){
+  const d=new Date(ts), now=new Date(), diff=(now-d)/60000;
+  if(diff<1) return 'just now';
+  if(diff<60) return Math.round(diff)+'m ago';
+  if(diff<1440) return Math.round(diff/60)+'h ago';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ---- Escalation sweep (runs on render + timer) ---- */
+function sweepEscalations(){
+  let changed=false;
+  state.tickets.forEach(tk=>{
+    if(tk.status!=='Finalized' && Date.now()>tk.dueAt && !tk.escalated){
+      tk.escalated=true; tk.updatedAt=Date.now();
+      tk.log.unshift({ ts:Date.now(), text:`SLA breached — auto-escalated to ${tk.dept} lead for priority handling.` });
+      changed=true;
+    }
+  });
+  if(changed) save();
+}
+
+/* ---- Transitions ---- */
+function transition(id, to){
+  const tk = state.tickets.find(t=>t.id===id); if(!tk) return;
+  const labels={Open:'moved back to Open',Active:'started — now Active',Finalized:'verified and Finalized'};
+  tk.status=to; tk.updatedAt=Date.now();
+  if(to==='Finalized') tk.finalizedAt=Date.now(); else tk.finalizedAt=null;
+  tk.log.unshift({ ts:Date.now(), text:`Status ${labels[to]}.` });
+  save(); render(); if(ui.selected===id) openDrawer(id);
+  toast(to==='Finalized'?'Request finalized':'Status updated');
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  sweepEscalations();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===ui.tab));
+  const open = state.tickets.filter(t=>t.status!=='Finalized').length;
+  document.getElementById('tabQueueCnt').textContent = state.tickets.length? open : '';
+  const v = document.getElementById('view');
+  if(ui.tab==='submit') v.innerHTML = viewSubmit();
+  else if(ui.tab==='queue') v.innerHTML = viewQueue();
+  else v.innerHTML = viewDash();
+  wire();
+}
+
+/* ---- SUBMIT ---- */
+function viewSubmit(){
+  const d=ui.draft, text=d.subject+' '+d.desc, hasText=text.trim().length>2;
+  const cls=classify(text), pr=detectPriority(text);
+  return `
+  <div class="page-head">
+    <div class="eyebrow">Omni-channel intake</div>
+    <h1>Submit a request</h1>
+    <p>One standardized entry point for every channel — Portal, Email, WhatsApp, SMS or Instagram. The moment a request lands, it's classified, prioritised and routed automatically.</p>
+  </div>
+  <div class="submit-grid">
+    <div class="card card-pad">
+      <div class="row-2">
+        <div class="field"><label>Your name</label><input class="control" id="f-name" value="${esc(d.name)}" placeholder="Priya Sharma"></div>
+        <div class="field"><label>Email</label><input class="control" id="f-email" value="${esc(d.email)}" placeholder="priya@physique57.com"></div>
+      </div>
+      <div class="field">
+        <label>Received via <span class="hint">— the channel this came in on</span></label>
+        <div class="channel-pills" id="f-channels">
+          ${CHANNELS.map(c=>`<button class="pill ${d.channel===c?'on':''}" data-ch="${c}"><span class="dot"></span>${c}</button>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>Subject</label><input class="control" id="f-subject" value="${esc(d.subject)}" placeholder="e.g. Laptop won't connect to VPN"></div>
+      <div class="field"><label>Describe the request</label><textarea class="control" id="f-desc" placeholder="Give enough detail for the right team to act. Try words like 'salary', 'leave', 'password', 'access card'…">${esc(d.desc)}</textarea></div>
+      <button class="btn-primary" id="submitBtn" ${hasText?'':'disabled'}>Submit request</button>
+    </div>
+
+    <div class="triage">
+      <div class="triage-head">
+        <div class="t"><span class="live-dot"></span>Live classification</div>
+        <div class="auto">AUTO · RULE ENGINE</div>
+      </div>
+      <div class="triage-body">
+        ${!hasText ? `<div class="triage-empty">Start typing a subject or description.<br>The engine categorises, sets priority &amp; SLA, and picks a queue in real time — before you even submit.</div>`
+        : `
+        <div class="verdict">
+          <div class="vbox"><div class="k">Category</div><div class="v"><span class="badge b-cat"><span class="bd" style="background:var(--accent-ink)"></span>${cls.category}</span></div></div>
+          <div class="vbox"><div class="k">Priority</div><div class="v"><span class="prio prio-${pr.priority}">${pr.priority}</span></div></div>
+          <div class="vbox"><div class="k">SLA target</div><div class="v"><span class="mono">${SLA_HOURS[pr.priority]}h</span></div></div>
+          <div class="vbox"><div class="k">Confidence</div><div class="v"><span class="mono">${cls.category==='Other'?'low':Math.round(cls.confidence*100)+'%'}</span></div></div>
+        </div>
+        <div class="trace">
+          <div class="trace-title">Why this decision</div>
+          ${cls.matched.length ? `<div style="margin-bottom:8px">${cls.matched.slice(0,6).map(k=>`<span class="kw">${esc(k)}</span>`).join('')}</div>
+            <div class="trace-line">Matched ${cls.matched.length} keyword${cls.matched.length>1?'s':''} for <b style="color:#fff">${cls.category}</b>${pr.kw?`; priority raised to <b style="color:#fff">${pr.priority}</b> on "<span style="font-family:var(--mono)">${esc(pr.kw)}</span>".`:'.'}</div>`
+            : `<div class="trace-line">No category keywords matched yet — this would route to <b style="color:#fff">Triage Desk (Other)</b> for a human to classify. Add detail to sharpen the match.</div>`}
+        </div>
+        <div class="route-to">→ Routes to <b>${DEPT[cls.category]}</b></div>
+        `}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---- QUEUE (Kanban) ---- */
+function viewQueue(){
+  if(!state.tickets.length) return emptyState('No requests yet','Submit one from the Submit tab, or load sample data to explore the board.');
+  const f=ui.filter;
+  let list=state.tickets.filter(t=>{
+    if(f.category!=='all' && t.category!==f.category) return false;
+    if(f.q){ const q=f.q.toLowerCase(); if(!(t.subject.toLowerCase().includes(q)||t.id.toLowerCase().includes(q)||t.name.toLowerCase().includes(q))) return false; }
+    return true;
+  });
+  const cols=['Open','Active','Finalized'];
+  return `
+  <div class="page-head"><div class="eyebrow">Live queue</div><h1>Request board</h1>
+    <p>Every request flows Open → Active → Finalized. SLA countdowns and auto-escalation keep nothing from slipping through.</p></div>
+  <div class="toolbar">
+    <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <input class="control" id="q-search" placeholder="Search by ID, subject or requester…" value="${esc(f.q)}"></div>
+    <select class="control" id="q-cat" style="width:auto">
+      <option value="all">All departments</option>
+      ${['HR','IT','Payroll','Operations','Other'].map(c=>`<option value="${c}" ${f.category===c?'selected':''}>${c}</option>`).join('')}
+    </select>
+  </div>
+  <div class="kanban">
+    ${cols.map(col=>{
+      const items=list.filter(t=>t.status===col);
+      return `<div class="col">
+        <div class="col-head"><div class="l"><span class="badge b-${col}"><span class="bd"></span>${col}</span></div><span class="c">${items.length}</span></div>
+        <div class="col-body">
+          ${items.length? items.map(cardHTML).join('') : `<div class="col-empty">Nothing here</div>`}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function cardHTML(tk){
+  const s=slaState(tk);
+  const cls={ontrack:'sla-ontrack',risk:'sla-risk',breach:'sla-breach',met:'sla-met'}[s];
+  return `<div class="tk" data-id="${tk.id}">
+    <div class="tk-top"><span class="tk-id">${tk.id}</span><span class="badge b-cat">${tk.category}</span></div>
+    <div class="tk-title">${esc(tk.subject)}</div>
+    <div class="tk-meta">
+      <span class="prio prio-${tk.priority}" style="font-size:11px">${tk.priority}</span>
+      <span class="tk-sla ${cls}">${tk.escalated&&tk.status!=='Finalized'?'⚠ ':''}${slaLabel(tk)}</span>
+    </div>
+  </div>`;
+}
+
+/* ---- DASHBOARD ---- */
+function viewDash(){
+  if(!state.tickets.length) return emptyState('No data yet','Submit requests or load sample data to see reporting come to life.');
+  const t=state.tickets;
+  const open=t.filter(x=>x.status==='Open').length;
+  const active=t.filter(x=>x.status==='Active').length;
+  const fin=t.filter(x=>x.status==='Finalized').length;
+  const breached=t.filter(x=>slaState(x)==='breach').length;
+  const finished=t.filter(x=>x.status==='Finalized');
+  const avgH = finished.length? Math.round(finished.reduce((a,x)=>a+(x.finalizedAt-x.createdAt),0)/finished.length/3600000*10)/10 : 0;
+  const cats=['HR','IT','Payroll','Operations','Other'];
+  const catCounts=cats.map(c=>({c,n:t.filter(x=>x.category===c).length}));
+  const maxCat=Math.max(1,...catCounts.map(x=>x.n));
+  const chCounts=CHANNELS.map(c=>({c,n:t.filter(x=>x.channel===c).length})).filter(x=>x.n>0);
+  const maxCh=Math.max(1,...chCounts.map(x=>x.n));
+  const catColor={HR:'#8B5CF6',IT:'#3B6FE0',Payroll:'#12986B',Operations:'#E08A0B',Other:'#7A8494'};
+  return `
+  <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
+    <div><div class="eyebrow">Reporting</div><h1>Operations dashboard</h1>
+    <p>The single source of truth that fragmented email and WhatsApp threads never gave you.</p></div>
+    <button class="btn-ghost" id="csvBtn">↓ Export CSV</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">${t.length}</div><div class="l">Total requests</div></div>
+    <div class="kpi"><div class="n">${open+active}</div><div class="l">In progress</div></div>
+    <div class="kpi"><div class="n">${fin}</div><div class="l">Finalized</div></div>
+    <div class="kpi ${breached?'warn':''}"><div class="n">${breached}</div><div class="l">SLA breached</div></div>
+    <div class="kpi"><div class="n">${avgH||'—'}${avgH?'h':''}</div><div class="l">Avg resolution</div></div>
+  </div>
+  <div class="dash-grid">
+    <div class="card card-pad">
+      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-bottom:16px">Requests by department</h4>
+      ${catCounts.map(x=>`<div class="chart-row"><div class="lab">${x.c}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${x.n/maxCat*100}%;background:${catColor[x.c]}"></div></div>
+        <div class="val">${x.n}</div></div>`).join('')}
+    </div>
+    <div class="card card-pad">
+      <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-bottom:16px">Intake by channel</h4>
+      ${chCounts.map(x=>`<div class="chart-row"><div class="lab">${x.c}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${x.n/maxCh*100}%;background:var(--accent)"></div></div>
+        <div class="val">${x.n}</div></div>`).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <div style="padding:16px 18px;border-bottom:1px solid var(--line)"><h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600">All requests</h4></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>ID</th><th>Subject</th><th>Dept</th><th>Priority</th><th>Status</th><th>SLA</th></tr></thead>
+      <tbody>
+        ${t.slice().sort((a,b)=>b.createdAt-a.createdAt).map(tk=>{
+          const s=slaState(tk); const cls={ontrack:'sla-ontrack',risk:'sla-risk',breach:'sla-breach',met:'sla-met'}[s];
+          return `<tr data-id="${tk.id}">
+            <td><span class="tk-id">${tk.id}</span></td>
+            <td style="font-weight:500;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(tk.subject)}</td>
+            <td>${tk.dept}</td>
+            <td><span class="prio prio-${tk.priority}" style="font-size:12px">${tk.priority}</span></td>
+            <td><span class="badge b-${tk.status}"><span class="bd"></span>${tk.status}</span></td>
+            <td><span class="tk-sla ${cls}">${slaLabel(tk)}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>
+  </div>`;
+}
+
+function emptyState(h,p){
+  return `<div class="card card-pad" style="text-align:center;padding:64px 24px">
+    <div style="font-size:17px;font-weight:600;margin-bottom:6px">${h}</div>
+    <p style="color:var(--muted);max-width:42ch;margin:0 auto 18px">${p}</p>
+    <button class="btn-ghost" id="seedInline">Load sample data</button></div>`;
+}
+
+/* ---- DRAWER ---- */
+function openDrawer(id){
+  const tk=state.tickets.find(t=>t.id===id); if(!tk) return;
+  ui.selected=id;
+  const s=slaState(tk); const cls={ontrack:'sla-ontrack',risk:'sla-risk',breach:'sla-breach',met:'sla-met'}[s];
+  const d=document.getElementById('drawer');
+  d.innerHTML=`
+    <div class="dr-head">
+      <button class="dr-close" id="drClose">×</button>
+      <div class="dr-id">${tk.id}</div>
+      <div class="dr-title">${esc(tk.subject)}</div>
+      <div style="margin-top:12px;display:flex;gap:7px;flex-wrap:wrap">
+        <span class="badge b-${tk.status}"><span class="bd"></span>${tk.status}</span>
+        <span class="badge b-cat">${tk.category}</span>
+        <span class="tk-sla ${cls}" style="align-self:center">${slaLabel(tk)}</span>
+      </div>
+      ${tk.escalated&&tk.status!=='Finalized'?`<div class="esc-flag">⚠ <div><b>Escalated.</b> This request breached its ${SLA_HOURS[tk.priority]}h SLA and was auto-flagged to the ${tk.dept} lead.</div></div>`:''}
+    </div>
+    <div class="dr-body">
+      <div class="dr-sec">
+        <h4>Details</h4>
+        <div class="kv">
+          <div class="k">Requester</div><div class="v">${esc(tk.name)}</div>
+          <div class="k">Email</div><div class="v">${esc(tk.email)}</div>
+          <div class="k">Channel</div><div class="v">${tk.channel}</div>
+          <div class="k">Priority</div><div class="v"><span class="prio prio-${tk.priority}">${tk.priority}</span></div>
+          <div class="k">Assigned to</div><div class="v">${tk.dept}</div>
+          <div class="k">Created</div><div class="v">${fmtTime(tk.createdAt)}</div>
+        </div>
+      </div>
+      <div class="dr-sec"><h4>Description</h4><div class="desc-box">${esc(tk.desc)||'<span style="color:var(--muted)">No description provided.</span>'}</div></div>
+      <div class="dr-sec"><h4>Auto-classification</h4>
+        <div class="desc-box" style="background:var(--accent-wash);border-color:#C7E8EB">
+          Detected <b>${tk.category}</b>${tk.matched.length?` from: ${tk.matched.map(k=>`<span class="kw" style="background:#fff">${esc(k)}</span>`).join(' ')}`:' (no keyword match — sent to Triage Desk).'}
+        </div>
+      </div>
+      <div class="dr-sec"><h4>Activity log</h4>
+        <div class="log">${tk.log.map(l=>`<div class="log-item"><div>${esc(l.text)}</div><div class="lt">${fmtTime(l.ts)}</div></div>`).join('')}</div>
+      </div>
+    </div>
+    <div class="dr-foot">${footActions(tk)}</div>`;
+  document.getElementById('scrim').classList.add('show');
+  d.classList.add('show');
+  document.getElementById('drClose').onclick=closeDrawer;
+  d.querySelectorAll('[data-to]').forEach(b=> b.onclick=()=>transition(tk.id,b.dataset.to));
+}
+function footActions(tk){
+  if(tk.status==='Open') return `<button class="act act-primary" data-to="Active">Start work →</button>`;
+  if(tk.status==='Active') return `<button class="act act-ghost" data-to="Open">← Move back</button><button class="act act-final" data-to="Finalized">Verify &amp; finalize ✓</button>`;
+  return `<button class="act act-ghost" data-to="Active">Reopen</button>`;
+}
+function closeDrawer(){ ui.selected=null; document.getElementById('scrim').classList.remove('show'); document.getElementById('drawer').classList.remove('show'); }
+
+/* ---- CSV ---- */
+function exportCSV(){
+  const cols=['ID','Requester','Email','Channel','Subject','Category','Department','Priority','Status','Created','Due','SLA'];
+  const rows=state.tickets.map(t=>[t.id,t.name,t.email,t.channel,t.subject,t.category,t.dept,t.priority,t.status,new Date(t.createdAt).toISOString(),new Date(t.dueAt).toISOString(),slaState(t)]);
+  const csv=[cols,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='requestflow_export.csv'; a.click(); URL.revokeObjectURL(url);
+  toast('CSV exported');
+}
+
+/* ---- Wiring ---- */
+function wire(){
+  if(ui.tab==='submit'){
+    const bind=(id,key)=>{const el=document.getElementById(id); if(el) el.oninput=e=>{ui.draft[key]=e.target.value; if(key==='subject'||key==='desc') refreshTriage();};};
+    bind('f-name','name'); bind('f-email','email'); bind('f-subject','subject'); bind('f-desc','desc');
+    document.querySelectorAll('#f-channels .pill').forEach(p=> p.onclick=()=>{ui.draft.channel=p.dataset.ch; document.querySelectorAll('#f-channels .pill').forEach(x=>x.classList.toggle('on',x===p));});
+    const sb=document.getElementById('submitBtn'); if(sb) sb.onclick=doSubmit;
+  }
+  if(ui.tab==='queue'){
+    const se=document.getElementById('q-search'); if(se) se.oninput=e=>{ui.filter.q=e.target.value; render(); const n=document.getElementById('q-search'); if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length);}};
+    const ct=document.getElementById('q-cat'); if(ct) ct.onchange=e=>{ui.filter.category=e.target.value; render();};
+    document.querySelectorAll('.tk').forEach(c=> c.onclick=()=>openDrawer(c.dataset.id));
+  }
+  if(ui.tab==='dash'){
+    const cb=document.getElementById('csvBtn'); if(cb) cb.onclick=exportCSV;
+    document.querySelectorAll('tbody tr').forEach(r=> r.onclick=()=>openDrawer(r.dataset.id));
+  }
+  const si=document.getElementById('seedInline'); if(si) si.onclick=seed;
+}
+function refreshTriage(){
+  // Re-render only the triage panel for snappy live feedback
+  const d=ui.draft, text=d.subject+' '+d.desc, hasText=text.trim().length>2;
+  const panel=document.querySelector('.triage'); if(!panel) return;
+  const cls=classify(text), pr=detectPriority(text);
+  const btn=document.getElementById('submitBtn'); if(btn) btn.disabled=!hasText;
+  panel.querySelector('.triage-body').innerHTML = !hasText
+    ? `<div class="triage-empty">Start typing a subject or description.<br>The engine categorises, sets priority &amp; SLA, and picks a queue in real time — before you even submit.</div>`
+    : `<div class="verdict">
+        <div class="vbox"><div class="k">Category</div><div class="v"><span class="badge b-cat"><span class="bd" style="background:var(--accent-ink)"></span>${cls.category}</span></div></div>
+        <div class="vbox"><div class="k">Priority</div><div class="v"><span class="prio prio-${pr.priority}">${pr.priority}</span></div></div>
+        <div class="vbox"><div class="k">SLA target</div><div class="v"><span class="mono">${SLA_HOURS[pr.priority]}h</span></div></div>
+        <div class="vbox"><div class="k">Confidence</div><div class="v"><span class="mono">${cls.category==='Other'?'low':Math.round(cls.confidence*100)+'%'}</span></div></div>
+      </div>
+      <div class="trace"><div class="trace-title">Why this decision</div>
+      ${cls.matched.length?`<div style="margin-bottom:8px">${cls.matched.slice(0,6).map(k=>`<span class="kw">${esc(k)}</span>`).join('')}</div>
+        <div class="trace-line">Matched ${cls.matched.length} keyword${cls.matched.length>1?'s':''} for <b style="color:#fff">${cls.category}</b>${pr.kw?`; priority raised to <b style="color:#fff">${pr.priority}</b> on "<span style="font-family:var(--mono)">${esc(pr.kw)}</span>".`:'.'}</div>`
+        :`<div class="trace-line">No category keywords matched yet — this would route to <b style="color:#fff">Triage Desk (Other)</b>. Add detail to sharpen the match.</div>`}
+      </div>
+      <div class="route-to">→ Routes to <b>${DEPT[cls.category]}</b></div>`;
+}
+function doSubmit(){
+  const d=ui.draft;
+  if(!(d.subject+d.desc).trim()) return;
+  const tk=makeTicket(d);
+  state.tickets.push(tk); save();
+  ui.draft={name:'',email:'',channel:'Portal',subject:'',desc:''};
+  ui.tab='queue'; render();
+  toast(`Request created · ${tk.id}`);
+  setTimeout(()=>openDrawer(tk.id),260);
+}
+
+/* ---- Sample data ---- */
+function seed(){
+  const H=3600*1000, D=24*H, now=Date.now();
+  const raw=[
+    {name:'Ananya Rao',email:'ananya@physique57.com',channel:'WhatsApp',subject:'Cannot access payroll portal, salary not credited',desc:'My salary for this month is not credited and I cannot log in to the payroll portal. Urgent, need this resolved today.',ageH:30},
+    {name:'Rohit Mehta',email:'rohit@physique57.com',channel:'Email',subject:'Laptop VPN not working from studio',desc:'My laptop cannot connect to the VPN since morning, blocked from the booking system.',ageH:6},
+    {name:'Sara Khan',email:'sara@physique57.com',channel:'Portal',subject:'Apply for 3 days sick leave',desc:'Requesting sick leave for three days next week, please advise on the policy and approval.',ageH:20},
+    {name:'Dev Patel',email:'dev@physique57.com',channel:'SMS',subject:'Access card not working at Kemps Corner',desc:'My access card stopped working at the Kemps Corner facility entrance this morning.',ageH:2},
+    {name:'Meera Iyer',email:'meera@physique57.com',channel:'Instagram',subject:'Reimbursement for client event supplies',desc:'Need reimbursement for stationery and supplies I bought for the member event, expense claim attached.',ageH:50},
+    {name:'Karan Singh',email:'karan@physique57.com',channel:'Email',subject:'New instructor onboarding documents',desc:'Please share the onboarding and offer letter documents for the two new barre instructors joining Monday.',ageH:8},
+    {name:'Nisha Gupta',email:'nisha@physique57.com',channel:'WhatsApp',subject:'Question about pantry supplies vendor',desc:'The pantry supplies vendor has not delivered this week, can facilities follow up.',ageH:1},
+  ];
+  state={tickets:[],counter:0,seeded:true};
+  raw.forEach(r=>{
+    const tk=makeTicket(r);
+    tk.createdAt=now-r.ageH*H; tk.updatedAt=tk.createdAt;
+    tk.dueAt=tk.createdAt+SLA_HOURS[tk.priority]*H;
+    tk.log=[{ts:tk.createdAt,text:`Request received via ${r.channel}. Auto-classified as ${tk.category} · ${tk.priority}. Routed to ${tk.dept}. SLA target: ${SLA_HOURS[tk.priority]}h.`}];
+    state.tickets.push(tk);
+  });
+  // give some lifecycle variety
+  const t=state.tickets;
+  if(t[1]){t[1].status='Active';t[1].updatedAt=now-3*H;t[1].log.unshift({ts:now-3*H,text:'Status started — now Active.'});}
+  if(t[2]){t[2].status='Finalized';t[2].finalizedAt=now-14*H;t[2].log.unshift({ts:now-14*H,text:'Status verified and Finalized.'});}
+  if(t[5]){t[5].status='Active';t[5].updatedAt=now-4*H;t[5].log.unshift({ts:now-4*H,text:'Status started — now Active.'});}
+  save(); ui.tab='queue'; render(); toast('Sample data loaded');
+}
+function resetAll(){
+  if(!confirm('Clear all requests and start fresh?')) return;
+  state={tickets:[],counter:0,seeded:false}; save(); ui.tab='submit'; render(); toast('Cleared');
+}
+
+/* ---- Utils ---- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let toastTimer;
+function toast(msg){const el=document.getElementById('toast');el.innerHTML=`<span class="ti">✓</span>${esc(msg)}`;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2400);}
+
+/* ---- Boot ---- */
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('.tab'); if(b){ui.tab=b.dataset.tab; render();}});
+document.getElementById('seedBtn').onclick=seed;
+document.getElementById('resetBtn').onclick=resetAll;
+document.getElementById('scrim').onclick=closeDrawer;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+if(!state.seeded && !state.tickets.length) seed(); // first-run demo data
+render();
+setInterval(()=>{ if(!document.hidden){ sweepEscalations(); if(ui.tab!=='submit') render(); } },60000);
+</script>
+</body>
+</html>
